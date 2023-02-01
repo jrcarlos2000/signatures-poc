@@ -29,13 +29,14 @@ struct SignatureData2 {
     uint256 amount;
 }
 struct SignatureData5 {
-    address targetAddress;
+    uint256 targetAddress;
     uint256 nonce;
     uint256 validFrom;
     uint256 expiry;
     uint256 param1;
     uint256 param2;
     uint256 param3;
+    uint256 param4;
     // FIXED PARAMS
     bytes signature;
     address from;
@@ -183,33 +184,13 @@ contract SignatureTester {
         if (!paused) {
             if (_data.length <= 32) return (false, address(0));
 
-            address targetAddress;
-            uint256 nonce;
-            uint256 validFrom;
-            uint256 expiry;
-            uint256 param1;
-            uint256 param2;
-            uint256 param3;
+           SignatureData5 memory s;
 
-            bytes memory signature;
-            (targetAddress, nonce, validFrom, expiry, param1, param2, param3,signature) = abi.decode(
+            (s.targetAddress, s.nonce, s.validFrom, s.expiry, s.param1, s.param2, s.param3, s.signature) = abi.decode(
                 _data,
-                (address, uint256, uint256, uint256, uint256, uint256,uint256, bytes)
+                (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bytes)
             );
             // (param1) = abi.decode(_data2, (uint256));
-            SignatureData5 memory s;
-
-            s.targetAddress = targetAddress;
-            s.nonce = nonce;
-            s.validFrom = validFrom;
-            s.expiry = expiry;
-            s.signature = signature;
-            s.param1 = param1;
-            s.from = _from;
-            s.to = _to;
-            s.amount = _amount;
-            s.param2 = param2;
-            s.param3 = param3;
 
             return (true, checkBool5(s));
         }
@@ -284,7 +265,7 @@ contract SignatureTester {
         SignatureData5 memory _data
     ) internal view returns (address) {
         if (
-            address(this) != _data.targetAddress ||
+            // address(this) != _data.targetAddress ||
             _data.signature.length == 0 ||
             _checkSignatureIsInvalid(_data.signature) ||
             _data.expiry < block.timestamp ||
@@ -300,6 +281,7 @@ contract SignatureTester {
                 _data.param1,
                 _data.param2,
                 _data.param3,
+                _data.param4,
                 _data.from,
                 _data.to,
                 _data.amount
