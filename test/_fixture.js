@@ -3,15 +3,13 @@ const hre = require("hardhat");
 
 async function defaultFixture() {
   await deployments.fixture();
-  const dummyToken = await ethers.getContract("DummyToken");
-  const priceFeed = await ethers.getContract("MockChainlinkOracleFeed");
   const cSignatureTester = await ethers.getContract("SignatureTester");
-  const bob = (await ethers.getSigners())[0];
-
+  const signers = await ethers.getSigners();
+  const bob = signers[0];
+  const tay = signers[1];
   return {
-    dummyToken,
-    priceFeed,
     bob,
+    tay,
     cSignatureTester,
   };
 }

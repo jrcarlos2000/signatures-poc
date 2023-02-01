@@ -5,54 +5,150 @@ const { loadFixture } = require("../utils/helpers");
 const { parseUnits, formatBytes32String } = require("ethers/lib/utils");
 const { BigNumber } = require("ethers");
 const { getTxOpts } = require("../utils/tx");
+const abi = require("ethereumjs-abi");
 
 describe("Singature Tester", async () => {
   describe("Trial 1", async () => {
-    it("check function  gas cost", async () => {
-      const { cSignatureTester, bob } = await loadFixture(defaultFixture);
-      const messageDigest =
-        "0x" +
-        ethers.utils.solidityKeccak256(
-          [
-            "address",
-            "uint256",
-            "uint256",
-            "uint256",
-            "address",
-            "address",
-            "address",
-          ],
-          [
-            ethers.constants.AddressZero,
-            "12",
-            "12",
-            "12",
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-          ]
-        );
-      // console.log("done here");
-      // let messageHashBytes = ethers.utils.arrayify(messageDigest);
-      // console.log("done here");
-      const signature = bob.signMessage(messageDigest);
-      const _data = ethers.utils.defaultAbiCoder.encode(
-        ["address", "uint256", "uint256", "uint256", "bytes"],
+
+    let cSignatureTester;
+    let bob, tay;
+    let transferAmount;
+
+    before(async () => {
+      const fixture = await loadFixture(defaultFixture);
+      cSignatureTester = fixture.cSignatureTester;
+      bob = fixture.bob;
+      tay = fixture.tay;
+      transferAmount = 100;
+      console.log(bob.address)
+    });
+
+    // function returns the data for the call of contract
+    async function performVerifyTransfer(sigTypes, sigParams) {
+      const messageDigest = abi
+        .soliditySHA3(sigTypes, sigParams)
+        .toString("hex");
+      // const signature = await bob.signMessage(messageDigest);
+      const signature = await bob.signMessage(
+        ethers.utils.arrayify(
+          ethers.utils.keccak256(
+            ethers.utils.defaultAbiCoder.encode(sigTypes, sigParams)
+          )
+        )
+      );
+      const data = ethers.utils.defaultAbiCoder.encode(
+        [...sigTypes.slice(0, sigTypes.length - 3), "bytes"],
+        [...sigParams.slice(0, sigParams.length - 3), signature]
+      );
+      return [...sigParams.slice(-3), data];
+    }
+    it("function 1", async () => {
+      const params = await performVerifyTransfer(
         [
-          ethers.constants.AddressZero,
-          120000,
-          120000,
-          120000,
-          formatBytes32String(signature),
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+          "address",
+          "address",
+          "uint256",
+        ],
+        [
+          cSignatureTester.address,
+          1,
+          12,
+          100000000000,
+          bob.address,
+          tay.address,
+          transferAmount,
         ]
       );
-      const tx = await cSignatureTester.verifyTransfer(
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        120000,
-        _data
+      const tx = await cSignatureTester.connect(bob).verifyTransfer1(...params);
+      await tx.wait();
+      // console.log(tx, bob.address);
+    });
+    it("function 2", async () => {
+      const params = await performVerifyTransfer(
+        [
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "address",
+          "address",
+          "uint256",
+        ],
+        [
+          cSignatureTester.address,
+          1,
+          12,
+          100000000000,
+          100,
+          bob.address,
+          tay.address,
+          transferAmount,
+        ]
       );
-      console.log(tx);
+      const tx = await cSignatureTester.connect(bob).verifyTransfer2(...params);
+      await tx.wait();
+    });
+    it("function 3", async () => {
+      const params = await performVerifyTransfer(
+        [
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "address",
+          "address",
+          "uint256",
+        ],
+        [
+          cSignatureTester.address,
+          1,
+          12,
+          100000000000,
+          100,
+          100,
+          bob.address,
+          tay.address,
+          transferAmount,
+        ]
+      );
+      const tx = await cSignatureTester.connect(bob).verifyTransfer3(...params);
+      await tx.wait();
+    });
+    it("function 5", async () => {
+      const params = await performVerifyTransfer(
+        [
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "address",
+          "address",
+          "uint256",
+        ],
+        [
+          cSignatureTester.address,
+          1,
+          12,
+          100000000000,
+          100,
+          100,
+          100,
+          bob.address,
+          tay.address,
+          transferAmount,
+        ]
+      );
+      const tx = await cSignatureTester.connect(bob).verifyTransfer5(...params);
       await tx.wait();
     });
   });

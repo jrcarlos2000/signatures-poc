@@ -3,24 +3,65 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+struct SignatureData1 {
+    address targetAddress;
+    uint256 nonce;
+    uint256 validFrom;
+    uint256 expiry;
+    uint256 param1;
+    bytes signature;
+    // FIXED PARAMS
+    address from;
+    address to;
+    uint256 amount;
+}
+struct SignatureData2 {
+    address targetAddress;
+    uint256 nonce;
+    uint256 validFrom;
+    uint256 expiry;
+    uint256 param1;
+    uint256 param2;
+    // FIXED PARAMS
+    bytes signature;
+    address from;
+    address to;
+    uint256 amount;
+}
+struct SignatureData5 {
+    address targetAddress;
+    uint256 nonce;
+    uint256 validFrom;
+    uint256 expiry;
+    uint256 param1;
+    uint256 param2;
+    uint256 param3;
+    // FIXED PARAMS
+    bytes signature;
+    address from;
+    address to;
+    uint256 amount;
+}
+
 contract SignatureTester {
     using SafeMath for uint256;
     using ECDSA for bytes32;
+
     bool public paused;
     bytes32 public constant INVALID_SIG = "INVALIDSIG";
 
     constructor() {
-        paused = true;
+        paused = false;
     }
 
-    function verifyTransfer(
+    function verifyTransfer1(
         address _from,
         address _to,
         uint256 _amount,
         bytes memory _data
-    ) external returns (bool, bytes32) {
+    ) external returns (bool, address) {
         if (!paused) {
-            if (_data.length <= 32) return (false, bytes32(0));
+            if (_data.length <= 32) return (false, address(0));
 
             address targetAddress;
             uint256 nonce;
@@ -38,7 +79,7 @@ contract SignatureTester {
                 _checkSignatureIsInvalid(signature) ||
                 expiry < block.timestamp ||
                 validFrom > block.timestamp
-            ) return (false, bytes32(0));
+            ) return (false, address(0));
 
             bytes32 hash = keccak256(
                 abi.encodePacked(
@@ -52,19 +93,230 @@ contract SignatureTester {
                 )
             );
             address signer = hash.toEthSignedMessageHash().recover(signature);
-
-            if (!_checkSigner(signer)) return (false, bytes32(0));
-            return (true, bytes32(uint256(uint160(address(this))) << 96));
+            return (true, signer);
         }
-        return (false, bytes32(0));
+        return (false, address(0));
+    }
+
+    function verifyTransfer2(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    ) external returns (bool, address) {
+        if (!paused) {
+            if (_data.length <= 32) return (false, address(0));
+
+            address targetAddress;
+            uint256 nonce;
+            uint256 validFrom;
+            uint256 expiry;
+            uint256 param1;
+            bytes memory signature;
+            (targetAddress, nonce, validFrom, expiry, param1, signature) = abi.decode(
+                _data,
+                (address, uint256, uint256, uint256, uint256, bytes)
+            );
+            // (param1) = abi.decode(_data2, (uint256));
+            SignatureData1 memory s;
+
+            s.targetAddress = targetAddress;
+            s.nonce = nonce;
+            s.validFrom = validFrom;
+            s.expiry = expiry;
+            s.signature = signature;
+            s.param1 = param1;
+            s.from = _from;
+            s.to = _to;
+            s.amount = _amount;
+
+            return (true, checkBool(s));
+        }
+        return (false, address(0));
+    }
+
+    function verifyTransfer3(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    ) external returns (bool, address) {
+        if (!paused) {
+            if (_data.length <= 32) return (false, address(0));
+
+            address targetAddress;
+            uint256 nonce;
+            uint256 validFrom;
+            uint256 expiry;
+            uint256 param1;
+            uint256 param2;
+            bytes memory signature;
+            (targetAddress, nonce, validFrom, expiry, param1, param2, signature) = abi.decode(
+                _data,
+                (address, uint256, uint256, uint256, uint256, uint256, bytes)
+            );
+            // (param1) = abi.decode(_data2, (uint256));
+            SignatureData2 memory s;
+
+            s.targetAddress = targetAddress;
+            s.nonce = nonce;
+            s.validFrom = validFrom;
+            s.expiry = expiry;
+            s.signature = signature;
+            s.param1 = param1;
+            s.from = _from;
+            s.to = _to;
+            s.amount = _amount;
+            s.param2 = param2;
+
+            return (true, checkBool2(s));
+        }
+        return (false, address(0));
+    }
+
+    function verifyTransfer5(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    ) external returns (bool, address) {
+        if (!paused) {
+            if (_data.length <= 32) return (false, address(0));
+
+            address targetAddress;
+            uint256 nonce;
+            uint256 validFrom;
+            uint256 expiry;
+            uint256 param1;
+            uint256 param2;
+            uint256 param3;
+
+            bytes memory signature;
+            (targetAddress, nonce, validFrom, expiry, param1, param2, param3,signature) = abi.decode(
+                _data,
+                (address, uint256, uint256, uint256, uint256, uint256,uint256, bytes)
+            );
+            // (param1) = abi.decode(_data2, (uint256));
+            SignatureData5 memory s;
+
+            s.targetAddress = targetAddress;
+            s.nonce = nonce;
+            s.validFrom = validFrom;
+            s.expiry = expiry;
+            s.signature = signature;
+            s.param1 = param1;
+            s.from = _from;
+            s.to = _to;
+            s.amount = _amount;
+            s.param2 = param2;
+            s.param3 = param3;
+
+            return (true, checkBool5(s));
+        }
+        return (false, address(0));
+    }
+
+    function checkBool(
+        SignatureData1 memory _data
+    ) internal view returns (address) {
+        if (
+            address(this) != _data.targetAddress ||
+            _data.signature.length == 0 ||
+            _checkSignatureIsInvalid(_data.signature) ||
+            _data.expiry < block.timestamp ||
+            _data.validFrom > block.timestamp
+        ) return (address(0));
+
+        {
+            bytes memory encoded = abi.encodePacked(
+                _data.targetAddress,
+                _data.nonce,
+                _data.validFrom,
+                _data.expiry,
+                _data.param1,
+                _data.from,
+                _data.to,
+                _data.amount
+            );
+
+            bytes32 hash = keccak256(encoded);
+            address signer = hash.toEthSignedMessageHash().recover(
+                _data.signature
+            );
+            return (signer);
+
+        }
+
+    }
+    function checkBool2(
+        SignatureData2 memory _data
+    ) internal view returns (address) {
+        if (
+            address(this) != _data.targetAddress ||
+            _data.signature.length == 0 ||
+            _checkSignatureIsInvalid(_data.signature) ||
+            _data.expiry < block.timestamp ||
+            _data.validFrom > block.timestamp
+        ) return (address(0));
+
+        {
+            bytes memory encoded = abi.encodePacked(
+                _data.targetAddress,
+                _data.nonce,
+                _data.validFrom,
+                _data.expiry,
+                _data.param1,
+                _data.param2,
+                _data.from,
+                _data.to,
+                _data.amount
+            );
+
+            bytes32 hash = keccak256(encoded);
+            address signer = hash.toEthSignedMessageHash().recover(
+                _data.signature
+            );
+            return (signer);
+        }
+    }
+
+    function checkBool5(
+        SignatureData5 memory _data
+    ) internal view returns (address) {
+        if (
+            address(this) != _data.targetAddress ||
+            _data.signature.length == 0 ||
+            _checkSignatureIsInvalid(_data.signature) ||
+            _data.expiry < block.timestamp ||
+            _data.validFrom > block.timestamp
+        ) return (address(0));
+
+        {
+            bytes memory encoded = abi.encodePacked(
+                _data.targetAddress,
+                _data.nonce,
+                _data.validFrom,
+                _data.expiry,
+                _data.param1,
+                _data.param2,
+                _data.param3,
+                _data.from,
+                _data.to,
+                _data.amount
+            );
+
+            bytes32 hash = keccak256(encoded);
+            address signer = hash.toEthSignedMessageHash().recover(
+                _data.signature
+            );
+            return (signer);
+        }
     }
 
     function _checkSignatureIsInvalid(
         bytes memory _data
     ) internal view returns (bool) {
-        bytes32 checkData = keccak256(
-            abi.encodePacked(INVALID_SIG, _data)
-        );
+        bytes32 checkData = keccak256(abi.encodePacked(INVALID_SIG, _data));
         return false;
     }
 
