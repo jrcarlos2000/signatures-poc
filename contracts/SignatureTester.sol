@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-struct SignatureData1 {
+struct SignatureData2 {
     address targetAddress;
     uint256 nonce;
     uint256 validFrom;
@@ -15,7 +15,7 @@ struct SignatureData1 {
     address to;
     uint256 amount;
 }
-struct SignatureData2 {
+struct SignatureData3 {
     address targetAddress;
     uint256 nonce;
     uint256 validFrom;
@@ -28,7 +28,8 @@ struct SignatureData2 {
     address to;
     uint256 amount;
 }
-struct SignatureData5 {
+
+struct SignatureData4 {
     uint256 targetAddress;
     uint256 nonce;
     uint256 validFrom;
@@ -114,12 +115,13 @@ contract SignatureTester {
             uint256 expiry;
             uint256 param1;
             bytes memory signature;
-            (targetAddress, nonce, validFrom, expiry, param1, signature) = abi.decode(
-                _data,
-                (address, uint256, uint256, uint256, uint256, bytes)
-            );
+            (targetAddress, nonce, validFrom, expiry, param1, signature) = abi
+                .decode(
+                    _data,
+                    (address, uint256, uint256, uint256, uint256, bytes)
+                );
             // (param1) = abi.decode(_data2, (uint256));
-            SignatureData1 memory s;
+            SignatureData2 memory s;
 
             s.targetAddress = targetAddress;
             s.nonce = nonce;
@@ -131,7 +133,7 @@ contract SignatureTester {
             s.to = _to;
             s.amount = _amount;
 
-            return (true, checkBool(s));
+            return (true, checkBool2(s));
         }
         return (false, address(0));
     }
@@ -152,12 +154,20 @@ contract SignatureTester {
             uint256 param1;
             uint256 param2;
             bytes memory signature;
-            (targetAddress, nonce, validFrom, expiry, param1, param2, signature) = abi.decode(
+            (
+                targetAddress,
+                nonce,
+                validFrom,
+                expiry,
+                param1,
+                param2,
+                signature
+            ) = abi.decode(
                 _data,
                 (address, uint256, uint256, uint256, uint256, uint256, bytes)
             );
             // (param1) = abi.decode(_data2, (uint256));
-            SignatureData2 memory s;
+            SignatureData3 memory s;
 
             s.targetAddress = targetAddress;
             s.nonce = nonce;
@@ -170,12 +180,12 @@ contract SignatureTester {
             s.amount = _amount;
             s.param2 = param2;
 
-            return (true, checkBool2(s));
+            return (true, checkBool3(s));
         }
         return (false, address(0));
     }
 
-    function verifyTransfer5(
+    function verifyTransfer4(
         address _from,
         address _to,
         uint256 _amount,
@@ -184,21 +194,38 @@ contract SignatureTester {
         if (!paused) {
             if (_data.length <= 32) return (false, address(0));
 
-           SignatureData5 memory s;
+            SignatureData4 memory s;
 
-            (s.targetAddress, s.nonce, s.validFrom, s.expiry, s.param1, s.param2, s.param3, s.signature) = abi.decode(
+            (
+                s.targetAddress,
+                s.nonce,
+                s.validFrom,
+                s.expiry,
+                s.param1,
+                s.param2,
+                s.param3,
+                s.signature
+            ) = abi.decode(
                 _data,
-                (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bytes)
+                (
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint256,
+                    bytes
+                )
             );
-            // (param1) = abi.decode(_data2, (uint256));
 
-            return (true, checkBool5(s));
+            return (true, checkBool4(s));
         }
         return (false, address(0));
     }
 
-    function checkBool(
-        SignatureData1 memory _data
+    function checkBool2(
+        SignatureData2 memory _data
     ) internal view returns (address) {
         if (
             address(this) != _data.targetAddress ||
@@ -225,12 +252,11 @@ contract SignatureTester {
                 _data.signature
             );
             return (signer);
-
         }
-
     }
-    function checkBool2(
-        SignatureData2 memory _data
+
+    function checkBool3(
+        SignatureData3 memory _data
     ) internal view returns (address) {
         if (
             address(this) != _data.targetAddress ||
@@ -261,8 +287,8 @@ contract SignatureTester {
         }
     }
 
-    function checkBool5(
-        SignatureData5 memory _data
+    function checkBool4(
+        SignatureData4 memory _data
     ) internal view returns (address) {
         if (
             // address(this) != _data.targetAddress ||

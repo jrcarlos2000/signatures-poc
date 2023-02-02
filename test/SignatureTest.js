@@ -9,7 +9,6 @@ const abi = require("ethereumjs-abi");
 
 describe("Singature Tester", async () => {
   describe("Trial 1", async () => {
-
     let cSignatureTester;
     let bob, tay;
     let transferAmount;
@@ -121,7 +120,7 @@ describe("Singature Tester", async () => {
       const tx = await cSignatureTester.connect(bob).verifyTransfer3(...params);
       await tx.wait();
     });
-    it("function 5", async () => {
+    it("function 4", async () => {
       const params = await performVerifyTransfer(
         [
           "address",
@@ -148,7 +147,7 @@ describe("Singature Tester", async () => {
           transferAmount,
         ]
       );
-      const tx = await cSignatureTester.connect(bob).verifyTransfer5(...params);
+      const tx = await cSignatureTester.connect(bob).verifyTransfer4(...params);
       await tx.wait();
     });
   });
